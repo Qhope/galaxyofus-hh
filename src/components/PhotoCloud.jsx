@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { useFrame } from '@react-three/fiber'
 import PhotoCard from './PhotoCard'
 import * as THREE from 'three'
 
@@ -87,10 +88,25 @@ const layouts = {
             points.push(new THREE.Vector3(x, y, z))
         }
         return points
+    },
+
+    wave: (count, radius) => {
+        // Ring/Cylinder layout for equalizer
+        const points = []
+        for (let i = 0; i < count; i++) {
+            const theta = (i / count) * Math.PI * 2 // Full circle
+            const r = radius * 1.2 // slightly wider
+            const x = Math.cos(theta) * r
+            const z = Math.sin(theta) * r
+            const y = 0 // Base Y, will be offset by music
+
+            points.push(new THREE.Vector3(x, y, z))
+        }
+        return points
     }
 }
 
-export default function PhotoCloud({ onPhotoClick, layout = 'sphere', count = 200 }) {
+export default function PhotoCloud({ onPhotoClick, layout = 'sphere', count = 200, analyser, dataArray, isRound }) {
     // 1. Import all images
     const imagesGlob = import.meta.glob('../assets/*.jpg', { eager: true })
     const originalImageUrls = Object.values(imagesGlob).map(mod => mod.default)
@@ -112,6 +128,13 @@ export default function PhotoCloud({ onPhotoClick, layout = 'sphere', count = 20
         return algo(imageUrls.length, radius)
     }, [imageUrls.length, layout])
 
+    // 4. Update audio data every frame
+    useFrame(() => {
+        if (analyser && dataArray) {
+            analyser.getByteFrequencyData(dataArray)
+        }
+    })
+
     return (
         <group>
             {imageUrls.map((url, i) => (
@@ -120,6 +143,11 @@ export default function PhotoCloud({ onPhotoClick, layout = 'sphere', count = 20
                     url={url}
                     position={positions[i]}
                     onClick={onPhotoClick}
+                    // Audio props
+                    layout={layout}
+                    audioData={dataArray}
+                    audioIndex={i}
+                    isRound={isRound}
                 />
             ))}
         </group>
