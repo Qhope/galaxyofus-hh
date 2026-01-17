@@ -25,12 +25,29 @@ function App() {
     const [playing, setPlaying] = useState(false)
     const [started, setStarted] = useState(false)
     const [isRound, setIsRound] = useState(false) // Shape toggle
+    const [fov, setFov] = useState(60)
 
     const cameraControlsRef = useRef()
     const audioRef = useRef(new Audio(musicFile))
     const analyserRef = useRef(null)
     const audioContextRef = useRef(null)
     const dataArrayRef = useRef(new Uint8Array(128)) // Small buffer for visualization
+
+    // Handle Responsive Camera FOV
+    useEffect(() => {
+        const handleResize = () => {
+            const aspect = window.innerWidth / window.innerHeight
+            // If portrait (height > width), increase FOV to fit more
+            if (aspect < 1) {
+                setFov(85)
+            } else {
+                setFov(60)
+            }
+        }
+        handleResize()
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     useEffect(() => {
         audioRef.current.loop = true
@@ -87,12 +104,14 @@ function App() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
-                zIndex: 9999
+                zIndex: 9999,
+                padding: '20px',
+                textAlign: 'center'
             }}>
-                <h1 style={{ fontSize: '3em', fontWeight: 300, letterSpacing: '0.2em', marginBottom: '20px' }}>
+                <h1 style={{ fontSize: 'min(3em, 10vw)', fontWeight: 300, letterSpacing: '0.2em', marginBottom: '20px' }}>
                     MY LOVE Hoen Hoen
                 </h1>
-                <p style={{ opacity: 0.7, marginBottom: '40px' }}>Galaxy of Memories</p>
+                <p style={{ opacity: 0.7, marginBottom: '40px', fontSize: '1em' }}>Galaxy of Memories</p>
                 <button
                     onClick={handleStart}
                     style={{
@@ -117,10 +136,10 @@ function App() {
     }
 
     return (
-        <div style={{ width: '100%', height: '100%' }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
 
 
-            <Canvas camera={{ position: [0, 0, 25], fov: 60 }}>
+            <Canvas camera={{ position: [0, 0, 25], fov: fov }}>
                 <color attach="background" args={['#050510']} />
 
                 {/* Ambient environment */}
@@ -150,19 +169,20 @@ function App() {
                 />
             </Canvas>
 
-            {/* Overlay UI */}
+            {/* Overlay UI - Centered Bottom */}
             <div style={{
                 position: 'absolute',
-                bottom: 40,
+                bottom: 'max(40px, env(safe-area-inset-bottom))',
                 left: 0,
                 width: '100%',
                 textAlign: 'center',
                 pointerEvents: 'none',
                 color: 'white',
-                opacity: activeImage ? 0 : 0.8, // Hide text when viewing
-                transition: 'opacity 0.5s'
+                opacity: activeImage ? 0 : 0.8,
+                transition: 'opacity 0.5s',
+                zIndex: 5
             }}>
-                <h1 style={{ margin: 0, fontSize: '2em', fontWeight: 300, letterSpacing: '0.2em' }}>
+                <h1 style={{ margin: 0, fontSize: 'min(2em, 6vw)', fontWeight: 300, letterSpacing: '0.2em' }}>
                     MY LOVE Hoen Hoen
                 </h1>
                 <p style={{ margin: '10px 0 0', fontSize: '0.9em', opacity: 0.6 }}>
@@ -170,36 +190,72 @@ function App() {
                 </p>
             </div>
 
-            {/* Controls Container */}
+            {/* Controls Container - Top Left with Safe Area */}
             <div style={{
                 position: 'absolute',
-                top: 20,
-                left: 20,
+                top: 'max(20px, env(safe-area-inset-top))',
+                left: 'max(20px, env(safe-area-inset-left))',
+                right: 'max(20px, env(safe-area-inset-right))',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '15px',
-                zIndex: 20
+                zIndex: 20,
+                pointerEvents: 'none'
             }}>
-                {/* Music Button */}
-                <button
-                    onClick={toggleMusic}
-                    style={{
-                        alignSelf: 'flex-start',
-                        background: 'transparent',
-                        border: '1px solid white',
-                        borderRadius: '20px',
-                        color: 'white',
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        fontSize: '0.8em',
-                        backdropFilter: 'blur(5px)'
-                    }}
-                >
-                    {playing ? '🎵 PAUSE MUSIC' : '🔇 PLAY MUSIC'}
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                    {/* Music Button */}
+                    <button
+                        onClick={toggleMusic}
+                        style={{
+                            pointerEvents: 'auto',
+                            background: 'transparent',
+                            border: '1px solid white',
+                            borderRadius: '20px',
+                            color: 'white',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontSize: '0.75em',
+                            backdropFilter: 'blur(5px)',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        {playing ? '🎵 PAUSE' : '🔇 PLAY'}
+                    </button>
 
-                {/* Layout Switcher */}
-                <div style={{ display: 'flex', gap: '10px' }}>
+                    {/* Secondary Controls (Shape) */}
+                    <button
+                        onClick={() => setIsRound(!isRound)}
+                        style={{
+                            pointerEvents: 'auto',
+                            background: isRound ? 'white' : 'rgba(255,255,255,0.2)',
+                            color: isRound ? 'black' : 'white',
+                            border: 'none',
+                            padding: '8px 16px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            fontSize: '0.75em',
+                            fontWeight: 600,
+                            backdropFilter: 'blur(5px)',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        {isRound ? '⚪ ROUND' : '⬜ SQUARE'}
+                    </button>
+                </div>
+
+                {/* Layout Switcher - Horizontal Scroll on Mobile */}
+                <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    overflowX: 'auto',
+                    paddingBottom: '5px',
+                    pointerEvents: 'auto',
+                    scrollbarWidth: 'none', // Firefox
+                    msOverflowStyle: 'none' // IE/Edge
+                }}>
+                    <style>{`
+                        div::-webkit-scrollbar { display: none; }
+                    `}</style>
                     {['sphere', 'helix', 'random', 'heart', 'donut', 'wave'].map((mode) => (
                         <button
                             key={mode}
@@ -208,14 +264,15 @@ function App() {
                                 background: layout === mode ? 'white' : 'rgba(255,255,255,0.2)',
                                 color: layout === mode ? 'black' : 'white',
                                 border: 'none',
-                                padding: '8px 16px',
+                                padding: '8px 14px',
                                 borderRadius: '20px',
                                 cursor: 'pointer',
                                 textTransform: 'uppercase',
-                                fontSize: '0.8em',
-                                fontWeight: 600,
+                                fontSize: '0.7em',
+                                fontWeight: 700,
                                 backdropFilter: 'blur(5px)',
-                                transition: 'all 0.3s'
+                                transition: 'all 0.3s',
+                                flexShrink: 0
                             }}
                         >
                             {mode}
@@ -223,46 +280,29 @@ function App() {
                     ))}
                 </div>
 
-                {/* Count Slider AND Shape Toggle */}
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        color: 'white',
-                        background: 'rgba(0,0,0,0.5)',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        backdropFilter: 'blur(5px)'
-                    }}>
-                        <span style={{ fontSize: '0.8em', fontWeight: 600 }}>MEMORIES: {count}</span>
-                        <input
-                            type="range"
-                            min="50"
-                            max="1000"
-                            step="50"
-                            value={count}
-                            onChange={(e) => setCount(parseInt(e.target.value))}
-                            style={{ cursor: 'pointer' }}
-                        />
-                    </div>
-
-                    <button
-                        onClick={() => setIsRound(!isRound)}
-                        style={{
-                            background: isRound ? 'white' : 'rgba(255,255,255,0.2)',
-                            color: isRound ? 'black' : 'white',
-                            border: 'none',
-                            padding: '8px 16px',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            fontSize: '0.8em',
-                            fontWeight: 600,
-                            backdropFilter: 'blur(5px)'
-                        }}
-                    >
-                        {isRound ? '⚪ ROUND' : '⬜ SQUARE'}
-                    </button>
+                {/* Count Slider */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: 'white',
+                    background: 'rgba(0,0,0,0.5)',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    backdropFilter: 'blur(5px)',
+                    pointerEvents: 'auto',
+                    width: 'fit-content'
+                }}>
+                    <span style={{ fontSize: '0.7em', fontWeight: 600, whiteSpace: 'nowrap' }}>LVL: {count}</span>
+                    <input
+                        type="range"
+                        min="50"
+                        max="1000"
+                        step="50"
+                        value={count}
+                        onChange={(e) => setCount(parseInt(e.target.value))}
+                        style={{ cursor: 'pointer', width: '100px' }}
+                    />
                 </div>
             </div>
 
@@ -275,54 +315,59 @@ function App() {
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        backgroundColor: 'rgba(0,0,0,0.9)',
+                        backgroundColor: 'rgba(0,0,0,0.95)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        zIndex: 10,
-                        cursor: 'default' // Default cursor for backdrop
+                        zIndex: 100,
+                        cursor: 'default',
+                        padding: '20px'
                     }}
                     onClick={() => setActiveImage(null)}
                 >
-                    {/* Close Button defined inside overlay for clarity */}
-                    <button
-                        style={{
-                            position: 'absolute',
-                            top: 30,
-                            right: 30,
-                            background: 'transparent',
-                            border: '2px solid white',
-                            borderRadius: '50%',
-                            width: '40px',
-                            height: '40px',
-                            color: 'white',
-                            fontSize: '20px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 11
-                        }}
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setActiveImage(null)
-                        }}
-                    >
-                        ✕
-                    </button>
+                    <div style={{ position: 'relative', display: 'inline-block', maxWidth: '90vw', maxHeight: '85vh' }}>
+                        <button
+                            style={{
+                                position: 'absolute',
+                                top: 10,
+                                right: 10,
+                                background: 'rgba(0,0,0,0.5)',
+                                border: '1px solid rgba(255,255,255,0.5)',
+                                borderRadius: '50%',
+                                width: '32px',
+                                height: '32px',
+                                color: 'white',
+                                fontSize: '16px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 110,
+                                backdropFilter: 'blur(5px)',
+                                transition: 'background 0.2s'
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setActiveImage(null)
+                            }}
+                        >
+                            ✕
+                        </button>
 
-                    <img
-                        src={activeImage}
-                        alt="Memory"
-                        style={{
-                            maxHeight: '90vh',
-                            maxWidth: '90vw',
-                            boxShadow: '0 0 50px rgba(255,255,255,0.2)',
-                            borderRadius: '8px',
-                            cursor: 'auto' // Prevent verifying click through on image
-                        }}
-                        onClick={(e) => e.stopPropagation()} // Prevent close when clicking image itself
-                    />
+                        <img
+                            src={activeImage}
+                            alt="Memory"
+                            style={{
+                                maxHeight: '85vh',
+                                maxWidth: '90vw',
+                                boxShadow: '0 0 50px rgba(255,255,255,0.1)',
+                                borderRadius: '12px',
+                                objectFit: 'contain',
+                                display: 'block'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
                 </div>
             )}
         </div>
