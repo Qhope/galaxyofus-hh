@@ -20,6 +20,7 @@ function Rig({ children }) {
 function App() {
     const [activeImage, setActiveImage] = useState(null)
     const [layout, setLayout] = useState('sphere')
+    const [count, setCount] = useState(400)
     const cameraControlsRef = useRef()
 
     return (
@@ -34,7 +35,7 @@ function App() {
 
                 <Suspense fallback={null}>
                     <Rig>
-                        <PhotoCloud onPhotoClick={setActiveImage} layout={layout} />
+                        <PhotoCloud onPhotoClick={setActiveImage} layout={layout} count={count} />
                     </Rig>
                 </Suspense>
 
@@ -67,36 +68,63 @@ function App() {
                 </p>
             </div>
 
-            {/* Controls (Layout Switcher) */}
+            {/* Controls Container */}
             <div style={{
                 position: 'absolute',
                 top: 20,
                 left: 20,
                 display: 'flex',
-                gap: '10px',
+                flexDirection: 'column',
+                gap: '15px',
                 zIndex: 5
             }}>
-                {['sphere', 'helix', 'random'].map((mode) => (
-                    <button
-                        key={mode}
-                        onClick={() => setLayout(mode)}
-                        style={{
-                            background: layout === mode ? 'white' : 'rgba(255,255,255,0.2)',
-                            color: layout === mode ? 'black' : 'white',
-                            border: 'none',
-                            padding: '8px 16px',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            textTransform: 'uppercase',
-                            fontSize: '0.8em',
-                            fontWeight: 600,
-                            backdropFilter: 'blur(5px)',
-                            transition: 'all 0.3s'
-                        }}
-                    >
-                        {mode}
-                    </button>
-                ))}
+                {/* Layout Switcher */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    {['sphere', 'helix', 'random', 'heart', 'donut'].map((mode) => (
+                        <button
+                            key={mode}
+                            onClick={() => setLayout(mode)}
+                            style={{
+                                background: layout === mode ? 'white' : 'rgba(255,255,255,0.2)',
+                                color: layout === mode ? 'black' : 'white',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: '20px',
+                                cursor: 'pointer',
+                                textTransform: 'uppercase',
+                                fontSize: '0.8em',
+                                fontWeight: 600,
+                                backdropFilter: 'blur(5px)',
+                                transition: 'all 0.3s'
+                            }}
+                        >
+                            {mode}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Count Slider */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: 'white',
+                    background: 'rgba(0,0,0,0.5)',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    backdropFilter: 'blur(5px)'
+                }}>
+                    <span style={{ fontSize: '0.8em', fontWeight: 600 }}>MEMORIES: {count}</span>
+                    <input
+                        type="range"
+                        min="50"
+                        max="1000"
+                        step="50"
+                        value={count}
+                        onChange={(e) => setCount(parseInt(e.target.value))}
+                        style={{ cursor: 'pointer' }}
+                    />
+                </div>
             </div>
 
             {/* Active Image Overlay */}

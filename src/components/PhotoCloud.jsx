@@ -43,24 +43,67 @@ const layouts = {
             points.push(v)
         }
         return points
+    },
+
+    heart: (count, radius) => {
+        const points = []
+        let i = 0
+        // Rejection sampling for true 3D volume heart
+        // Inequality: (x^2 + 9y^2/4 + z^2 - 1)^3 - x^2z^3 - 9y^2z^3/80 < 0
+        while (i < count) {
+            const x = (Math.random() - 0.5) * 3
+            const y = (Math.random() - 0.5) * 3
+            const z = (Math.random() - 0.5) * 3
+
+            const a = x * x + (9 / 4) * y * y + z * z - 1
+            const term2 = x * x * z * z * z
+            const term3 = (9 / 80) * y * y * z * z * z
+
+            if (a * a * a - term2 - term3 < 0) {
+                // Success, point is inside heart
+                // Rotate -90deg around X to make it upright
+                const v = new THREE.Vector3(x, z, -y).multiplyScalar(radius * 0.8)
+                points.push(v)
+                i++
+            }
+        }
+        return points
+    },
+
+    donut: (count, radius) => {
+        const points = []
+        const tubeRadius = radius * 0.3
+        const ringRadius = radius * 0.8
+        for (let i = 0; i < count; i++) {
+            // Uniform distribution on torus surface
+            const u = Math.random() * Math.PI * 2 // Tube angle
+            const v = Math.random() * Math.PI * 2 // Ring angle
+
+            // Torus parametric equation
+            const x = (ringRadius + tubeRadius * Math.cos(v)) * Math.cos(u)
+            const z = (ringRadius + tubeRadius * Math.cos(v)) * Math.sin(u)
+            const y = tubeRadius * Math.sin(v)
+
+            points.push(new THREE.Vector3(x, y, z))
+        }
+        return points
     }
 }
 
-export default function PhotoCloud({ onPhotoClick, layout = 'sphere' }) {
+export default function PhotoCloud({ onPhotoClick, layout = 'sphere', count = 200 }) {
     // 1. Import all images
     const imagesGlob = import.meta.glob('../assets/*.jpg', { eager: true })
     const originalImageUrls = Object.values(imagesGlob).map(mod => mod.default)
 
-    // 2. Repeat images to fill ~200 spots
-    const targetCount = 200
+    // 2. Repeat images to fill 'count' spots
     const imageUrls = useMemo(() => {
         if (originalImageUrls.length === 0) return []
         const repeated = []
-        for (let i = 0; i < targetCount; i++) {
+        for (let i = 0; i < count; i++) {
             repeated.push(originalImageUrls[i % originalImageUrls.length])
         }
         return repeated
-    }, [originalImageUrls])
+    }, [originalImageUrls, count])
 
     // 3. Compute positions based on layout prop
     const radius = 12 // Increased radius for more items
